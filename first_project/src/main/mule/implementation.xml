@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="9757c4e4-209d-4601-aaec-34ec3b37d5c7" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="2b9439c8-0a1d-4f9d-8dfb-8b223b99d1d2" >
+		<db:my-sql-connection host="mudb.learn.mulesoft.com" port="3306" user="mule" password="mule" database="training" />
+	</db:config>
+	<flow name="first_projectFlow" doc:id="e296e425-0537-4276-bcaf-78fcf8e5749e" >
+		<http:listener doc:name="Listner" doc:id="d0bbf170-317e-4fbc-a308-eab96a7c1e3f" config-ref="HTTP_Listener_config" path="/test"/>
+		<db:select doc:name="Select" doc:id="d494421d-f1c7-4f89-851a-0cc494634e7a" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM american]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="ad7d9f21-b7ef-4acf-9ee6-2bdaed857306" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+    ID: payload01.ID,
+    code: (payload01.code1 default "") ++ (payload01.code2 default ""),
+    price: payload01.price default 0,
+    departureDate: payload01.takeOffDate as String default "",
+    origin: payload01.fromAirport default "",
+    destination: payload01.toAirport default "",
+    emptySeats: payload01.seatsAvailable default 0,
+    plane: {
+        "type": payload01.planeType default "",
+        totalSeats: payload01.totalSeats default 0
+    }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="first_projectFlowById" doc:id="167cb3c6-9946-4b7e-b286-a6cf8d57f2b5" >
+		<http:listener doc:name="Copy_of_Listner" doc:id="1333023b-8bf5-499a-aeb2-44c07a3ecb1e" config-ref="HTTP_Listener_config" path="/test/{id}" allowedMethods="GET"/>
+		<db:select doc:name="Copy_of_Select" doc:id="611ca723-4607-47ba-b271-a8726aeae104" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT * FROM american WHERE ID=:IDval]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'IDval' : attributes.uriparams.ID}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="4fd3f080-a529-470d-8163-88d453bfac3b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+    ID: payload01.ID,
+    code: (payload01.code1 default "") ++ (payload01.code2 default ""),
+    price: payload01.price default 0,
+    departureDate: payload01.takeOffDate as String default "",
+    origin: payload01.fromAirport default "",
+    destination: payload01.toAirport default "",
+    emptySeats: payload01.seatsAvailable default 0,
+    plane: {
+        "type": payload01.planeType default "",
+        totalSeats: payload01.totalSeats default 0
+    }
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="PostFlow" doc:id="fbe2e6a9-17ac-4991-bc66-8365dc66d4aa" >
+		<http:listener doc:name="Listener" doc:id="ef34ae8a-c9eb-4a0b-8c3c-9d4d561162b6" config-ref="HTTP_Listener_config" path="/test" allowedMethods="POST"/>
+		<set-payload value='{"message" : Flights added sucessfully}' doc:name="Set Payload" doc:id="d53e4d69-dd3c-48aa-a353-11414a030fd4" />
+	</flow>
+</mule>
